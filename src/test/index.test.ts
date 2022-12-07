@@ -1,8 +1,6 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { describe, expect, it } from 'vitest'
-import { getRules } from '../style2class'
-import { checkValid } from '../styleHoverProvider'
 
 describe.skip('suite test', () => {
   it('test', async () => {
@@ -37,7 +35,7 @@ describe('is the string contained by a html tag', () => {
 describe('get style rules', () => {
   it('test', () => {
     const html = '<div style="display:none;color:black;" checked >'
-    const styleRules = getRules(html, 'style')
+    const styleRules = getRulesRange(html, 'style')
     expect(styleRules).toMatchInlineSnapshot('"display:none;color:black;"')
   })
 })

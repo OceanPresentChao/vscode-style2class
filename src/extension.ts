@@ -10,7 +10,7 @@ export function activate(context: vscode.ExtensionContext) {
     language: 'vue-html',
     scheme: 'file',
   }]
-  context.subscriptions.push(vscode.commands.registerCommand('style-to-class.convertStyle', style2classHandler))
+  context.subscriptions.push(vscode.commands.registerTextEditorCommand('style-to-class.convertStyle', style2classHandler))
   context.subscriptions.push(vscode.languages.registerHoverProvider(selectors, new StyleHoverProvider()))
 }
 

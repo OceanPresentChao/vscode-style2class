@@ -1,10 +1,31 @@
 import * as vscode from 'vscode'
 
-export async function style2classHandler(documentUri: vscode.Uri, pos: { line: number; character: number }) {
-  const document = await vscode.workspace.openTextDocument(documentUri)
+export async function style2classHandler(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, pos: { line: number; character: number }, partial: boolean) {
+  const document = textEditor.document
   const position = new vscode.Position(pos.line, pos.character)
   const wrapRange = getWrapRange(document, position)
   const inlineStyleRange = getRulesRange(document, wrapRange, 'style')
+  const inlineClassRange = getRulesRange(document, wrapRange, 'class')
+  let headRange = getTagRange(document, 'head')
+  if (!headRange) {
+    vscode.window.showErrorMessage('No head tag found')
+    return
+  }
+  let styleRange = getTagRange(document, 'style', headRange.tagRange)
+  if (!styleRange) {
+    await textEditor.edit((edit) => {
+      edit.insert(headRange!.contentRange.end, '<style>\n<\/style>\n')
+    })
+    headRange = getTagRange(document, 'head')
+    styleRange = getTagRange(document, 'style', headRange!.tagRange)
+  }
+  const inlineStyleText = document.getText(inlineStyleRange)
+  const inlineClassText = document.getText(inlineClassRange)
+  const styleItems = getItems(inlineStyleText)
+  const classItems = getItems(inlineClassText)
+  const choices = partial ? await chooseStyles(styleItems) : styleItems
+  if (!choices || choices.length === 0)
+    return
   vscode.window.showInputBox(
     {
       password: false,
@@ -16,38 +37,32 @@ export async function style2classHandler(documentUri: vscode.Uri, pos: { line: n
           return 'class name is invalid'
       },
     })
-    .then((className) => {
-      if (!className || !className.trim)
+    .then(async (className) => {
+      if (!className)
         return
-
-      const headRange = getTagRange(document, 'head')
-      if (!headRange)
-        return
-
-      const styleRange = getTagRange(document, 'style', headRange.tagRange)
-
-      if (!styleRange)
-        return
-
-      const editor = vscode.window.activeTextEditor
-      if (!editor)
-        return
-      editor.edit((editBuilder) => {
-        const inlineStyleText = document.getText(inlineStyleRange)
-        const classRulesText = getRules(inlineStyleText, className)
-        const inlineClassText = createInlineClass(className)
-        editBuilder.insert(styleRange.contentRange.end, classRulesText)
-        editBuilder.replace(inlineStyleRange, inlineClassText)
+      await textEditor.edit((edit) => {
+        const classRulesText = createClassText(className, choices)
+        const remainingStyleItems = styleItems.filter(v => !choices.includes(v))
+        const inlineStyleText = createInlineText('style', remainingStyleItems)
+        const inlineClassText = createInlineText('class', [...classItems, className])
+        edit.insert(styleRange!.contentRange.end, classRulesText)
+        if (choices.length === styleItems.length) {
+          edit.replace(inlineStyleRange, inlineClassText)
+        }
+        else {
+          edit.replace(inlineClassRange, inlineClassText)
+          edit.replace(inlineStyleRange, inlineStyleText)
+        }
       })
       vscode.commands.executeCommand('editor.action.formatDocument')
     })
 }
 
-function getRules(style: string, className: string) {
+function getItems(inlineText: string) {
   // style="color: red; font-size: 12px;"
-  style = style.slice(style.indexOf('"') + 1, style.lastIndexOf('"'))
-  const rules = style.split(';').filter(v => v.trim().length > 0)
-  return createClassText(className, rules)
+  inlineText = inlineText.slice(inlineText.indexOf('"') + 1, inlineText.lastIndexOf('"'))
+  const rules = inlineText.split(';').filter(v => v.trim().length > 0)
+  return rules
 }
 
 function createClassText(className: string, rules: string[]) {
@@ -58,12 +73,8 @@ function createClassText(className: string, rules: string[]) {
   return res
 }
 
-function createInlineClass(className: string) {
-  return `class="${className}"`
-}
-
 function chooseStyles(rules: string[]) {
-  vscode.window.showQuickPick(
+  return vscode.window.showQuickPick(
     rules,
     {
       canPickMany: true,
@@ -71,9 +82,6 @@ function chooseStyles(rules: string[]) {
       matchOnDescription: true,
       matchOnDetail: true,
       placeHolder: 'Choose style rules you want to convert',
-    })
-    .then((choices) => {
-      console.log(choices)
     })
 }
 
@@ -121,4 +129,15 @@ export function checkRangeValid(document: vscode.TextDocument, position: vscode.
   const wrapRange = getWrapRange(document, position)
   const tagContent = document.getText(wrapRange)
   return /^\<(?<tag>\w+)(?:\s*[\d\w\s-\.:;\"\'=]+\s*)*\>$/.test(tagContent)
+}
+
+function createInlineText(key: string, items: string[]) {
+  let res = `${key}="`
+  for (const item of items) {
+    res += ` ${item}`
+    if (key === 'style')
+      res += ';'
+  }
+  res += '"'
+  return res
 }

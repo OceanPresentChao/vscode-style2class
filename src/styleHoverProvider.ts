@@ -9,9 +9,10 @@ export class StyleHoverProvider implements vscode.HoverProvider {
     const range = document.getWordRangeAtPosition(position)
     const word = document.getText(range)
     if (word === 'style' && checkRangeValid(document, position)) {
-      const args = [document.uri, position]
-      const commandUri = vscode.Uri.parse(`command:style-to-class.convertStyle?${encodeURIComponent(JSON.stringify(args))}`)
-      const markdownText = new vscode.MarkdownString(`[Convert Style](${commandUri})`)
+      const args = position
+      const commandUriAll = vscode.Uri.parse(`command:style-to-class.convertStyle?${encodeURIComponent(JSON.stringify([args, false]))}`)
+      const commandUriPart = vscode.Uri.parse(`command:style-to-class.convertStyle?${encodeURIComponent(JSON.stringify([args, true]))}`)
+      const markdownText = new vscode.MarkdownString(`[Convert Style](${commandUriAll})  [Choose Style](${commandUriPart})`)
       markdownText.isTrusted = true
       return new vscode.Hover(markdownText, new vscode.Range(position, position))
     }

@@ -11,19 +11,10 @@
   ],
   "activationEvents": [
     "onLanguage:html",
-    "onLanguage:vue-html",
-    "onLanguage:typescriptreact",
-    "onCommand:style-to-class.helloWorld"
+    "onLanguage:vue-html"
   ],
   "main": "./out/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "style-to-class.helloWorld",
-        "title": "Hello World"
-      }
-    ]
-  },
+  "contributes": {},
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
     "compile": "tsc -p ./",

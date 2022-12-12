@@ -40,3 +40,15 @@ describe('get style rules', () => {
   })
 })
 
+describe('test', () => {
+  it('test', async () => {
+    const html = '<div :style="obj" style="color:beige;position: absolute;" :style="obj">'
+    let idx = html.indexOf('style')
+    // 防止vue的bind语法干扰
+    while (html[idx - 1] === ':')
+      idx = html.indexOf('style', idx + 1)
+
+    expect(html.substring(idx, idx + 10)).toMatchInlineSnapshot('"style=\\"col"')
+  })
+})
+

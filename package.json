@@ -11,7 +11,8 @@
   ],
   "activationEvents": [
     "onLanguage:html",
-    "onLanguage:vue-html"
+    "onLanguage:vue-html",
+    "onLanguage:vue"
   ],
   "main": "./out/extension.js",
   "contributes": {},

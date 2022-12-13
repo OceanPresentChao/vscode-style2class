@@ -13,5 +13,6 @@ export interface Strategy {
    * @param position
    * @returns 返回Style标签的Range
    */
-  getStyleRange(textEditor: TextEditor): Promise<RangeContext | null>
+  getStyleRange(textEditor: TextEditor): Promise<RangeContext>
+  checkValid(textEditor: TextEditor): boolean
 }

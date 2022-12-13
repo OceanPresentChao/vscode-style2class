@@ -31,15 +31,14 @@ export async function style2classHandler(textEditor: vscode.TextEditor, _edit: v
     .then(async (className) => {
       if (!className)
         return
-      const styleRange = await strategyFactory.getStrategy(languageId)?.getStyleRange(textEditor)
-      if (!styleRange)
+      const convertStrategy = strategyFactory.getStrategy(languageId)
+      if (!convertStrategy?.checkValid(textEditor))
         return
+      const classRulesText = createClassText(className, choices)
+      const remainingStyleItems = styleItems.filter(v => !choices.includes(v))
+      const inlineStyleText = createInlineText('style', remainingStyleItems)
+      const inlineClassText = createInlineText('class', [...classItems, className])
       await textEditor.edit((edit) => {
-        const classRulesText = createClassText(className, choices)
-        const remainingStyleItems = styleItems.filter(v => !choices.includes(v))
-        const inlineStyleText = createInlineText('style', remainingStyleItems)
-        const inlineClassText = createInlineText('class', [...classItems, className])
-        edit.insert(styleRange.contentRange.end, classRulesText)
         if (choices.length === styleItems.length) {
           edit.replace(inlineStyleRange, inlineClassText)
         }
@@ -47,6 +46,12 @@ export async function style2classHandler(textEditor: vscode.TextEditor, _edit: v
           edit.replace(inlineClassRange, inlineClassText)
           edit.replace(inlineStyleRange, inlineStyleText)
         }
+      })
+      const styleRange = await strategyFactory.getStrategy(languageId)?.getStyleRange(textEditor)
+      if (!styleRange)
+        return
+      await textEditor.edit((edit) => {
+        edit.insert(styleRange.contentRange.end, classRulesText)
       })
       vscode.commands.executeCommand('editor.action.formatDocument')
     })

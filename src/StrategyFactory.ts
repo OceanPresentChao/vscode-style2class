@@ -18,14 +18,10 @@ class HTMLStrategy implements Strategy {
 
   }
 
-  async getStyleRange(textEditor: vscode.TextEditor): Promise<RangeContext | null> {
+  async getStyleRange(textEditor: vscode.TextEditor): Promise<RangeContext> {
     const document = textEditor.document
     let headRange = getTagRange(document, 'head')
-    if (!headRange) {
-      vscode.window.showErrorMessage('No head tag found')
-      return null
-    }
-    let styleRange = getTagRange(document, 'style', headRange.tagRange)
+    let styleRange = getTagRange(document, 'style', headRange!.tagRange)
     if (!styleRange) {
       await textEditor.edit((edit) => {
         edit.insert(headRange!.contentRange.end, '\n<style>\n<\/style>\n')
@@ -33,7 +29,17 @@ class HTMLStrategy implements Strategy {
       headRange = getTagRange(document, 'head')
       styleRange = getTagRange(document, 'style', headRange!.tagRange)
     }
-    return styleRange
+    return styleRange!
+  }
+
+  checkValid(textEditor: vscode.TextEditor): boolean {
+    const document = textEditor.document
+    const headRange = getTagRange(document, 'head')
+    if (!headRange) {
+      vscode.window.showErrorMessage('No head tag found')
+      return false
+    }
+    return true
   }
 }
 
@@ -42,7 +48,7 @@ class VueStrategy implements Strategy {
 
   }
 
-  async getStyleRange(textEditor: vscode.TextEditor): Promise<RangeContext | null> {
+  async getStyleRange(textEditor: vscode.TextEditor): Promise<RangeContext> {
     const document = textEditor.document
     let styleRange = getTagRange(document, 'style')
     if (!styleRange) {
@@ -55,10 +61,14 @@ class VueStrategy implements Strategy {
       const newlen = document.getText().length
       const endPos = document.positionAt(newlen)
       styleRange = getTagRange(document, 'style', new vscode.Range(startPos, endPos))
-      console.log(document.getText(styleRange!.tagRange))
-      console.log(document.getText(styleRange!.contentRange))
+      // console.log(document.getText(styleRange!.tagRange))
+      // console.log(document.getText(styleRange!.contentRange))
     }
-    return styleRange
+    return styleRange!
+  }
+
+  checkValid(_textEditor: vscode.TextEditor): boolean {
+    return true
   }
 }
 

@@ -2,6 +2,7 @@
   "name": "style-to-class",
   "displayName": "StyleToClass",
   "description": "click inline style to generate class automatically",
+  "repository": "https://github.com/OceanPresentChao/vscode-style2class",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.73.0"
